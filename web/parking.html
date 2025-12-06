@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASM SVG Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        #generateBtn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        #generateBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        #generateBtn:active {
+            transform: translateY(0);
+        }
+
+        #generateBtn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .preview-container {
+            border: 2px dashed #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+        }
+
+        .preview-container.has-content {
+            border-color: #667eea;
+            background: white;
+        }
+
+        #svgPreview {
+            max-width: 100%;
+            max-height: 400px;
+        }
+
+        .placeholder {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .status.loading {
+            background: #ebf8ff;
+            color: #2b6cb0;
+            border: 1px solid #bee3f8;
+        }
+
+        .status.success {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 WASM SVG Generator</h1>
+        
+        <div class="controls">
+            <button id="generateBtn">Generate SVG</button>
+        </div>
+
+        <div id="statusMessage" class="status hidden"></div>
+
+        <div class="preview-container" id="previewContainer">
+            <div class="placeholder" id="placeholder">
+                Click "Generate SVG" to create and display your SVG
+            </div>
+            <div id="svgPreview"></div>
+        </div>
+    </div>
+
+    <script>
+        let wasmModule = null;
+        let capturedOutput = '';
+        const generateBtn = document.getElementById('generateBtn');
+        const svgPreview = document.getElementById('svgPreview');
+        const placeholder = document.getElementById('placeholder');
+        const previewContainer = document.getElementById('previewContainer');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Show status message
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status ${type}`;
+            statusMessage.classList.remove('hidden');
+        }
+
+        // Hide status message
+        function hideStatus() {
+            statusMessage.classList.add('hidden');
+        }
+
+        // Load WASM module
+        async function loadWasm() {
+            try {
+                showStatus('Loading WASM module...', 'loading');
+                
+                const wasmResponse = await fetch('console.wasm');
+                if (!wasmResponse.ok) {
+                    throw new Error(`Failed to fetch WASM file: ${wasmResponse.status} ${wasmResponse.statusText}`);
+                }
+
+                // Define imports that the WASM module might need
+                const imports = {
+                    env: {
+                        // Memory management
+                        memory: new WebAssembly.Memory({ initial: 256, maximum: 256 }),
+                        
+                        // Console functions for debugging
+                        console_log: (ptr, len) => {
+                            if (wasmModule && wasmModule.instance && wasmModule.instance.exports.memory) {
+                                const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer);
+                                const str = new TextDecoder().decode(memory.slice(ptr, ptr + len));
+                                console.log('WASM:', str);
+                                capturedOutput += str; // Capture output for SVG content
+                            }
+                        },
+                        
+                        // C++ exception handling
+                        __cxa_throw: (ptr, info, dest) => {
+                            console.error('C++ exception thrown:', ptr, info, dest);
+                            throw new Error('C++ exception thrown in WASM module');
+                        },
+                        __cxa_allocate_exception: (size) => {
+                            console.log('C++ allocate exception:', size);
+                            return 0; // Return null pointer
+                        },
+                        __cxa_begin_catch: (ptr) => {
+                            console.log('C++ begin catch:', ptr);
+                            return ptr;
+                        },
+                        __cxa_end_catch: () => {
+                            console.log('C++ end catch');
+                        },
+                        
+                        // Memory management functions
+                        malloc: (size) => {
+                            console.log('malloc called with size:', size);
+                            return 0; // Return null - this is a stub
+                        },
+                        free: (ptr) => {
+                            console.log('free called with ptr:', ptr);
+                        },
+                        
+                        // Standard library functions
+                        memcpy: (dest, src, size) => {
+                            if (wasmModule && wasmModule.instance && wasmModule.instance.exports.memory) {
+                                const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer);
+                                memory.copyWithin(dest, src, src + size);
+                            }
+                            return dest;
+                        },
+                        memset: (ptr, value, size) => {
+                            if (wasmModule && wasmModule.instance && wasmModule.instance.exports.memory) {
+                                const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer);
+                                memory.fill(value, ptr, ptr + size);
+                            }
+                            return ptr;
+                        },
+                        
+                        // Math functions that might be needed
+                        sin: Math.sin,
+                        cos: Math.cos,
+                        tan: Math.tan,
+                        sqrt: Math.sqrt,
+                        pow: Math.pow,
+                        floor: Math.floor,
+                        ceil: Math.ceil,
+                        fmod: (x, y) => x % y,
+                        
+                        // String functions
+                        strlen: (ptr) => {
+                            if (wasmModule && wasmModule.instance && wasmModule.instance.exports.memory) {
+                                const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer);
+                                let len = 0;
+                                while (memory[ptr + len] !== 0) len++;
+                                return len;
+                            }
+                            return 0;
+                        },
+                        
+                        // Print functions
+                        printf: (...args) => {
+                            console.log('printf called:', args);
+                            return 0;
+                        },
+                        puts: (ptr) => {
+                            if (wasmModule && wasmModule.instance && wasmModule.instance.exports.memory) {
+                                const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer);
+                                let str = '';
+                                let i = ptr;
+                                while (memory[i] !== 0) {
+                                    str += String.fromCharCode(memory[i]);
+                                    i++;
+                                }
+                                console.log('WASM puts:', str);
+                                capturedOutput += str + '\n';
+                                return str.length;
+                            }
+                            return 0;
+                        },
+                        
+                        // Abort function
+                        abort: () => {
+                            throw new Error('WASM module called abort()');
+                        },
+                        
+                        // Exit function
+                        exit: (code) => {
+                            console.log('WASM exit with code:', code);
+                        }
+                    },
+                    
+                    // WASI imports (Web Assembly System Interface)
+                    wasi_snapshot_preview1: {
+                        fd_write: (fd, iov, iovcnt, pnum) => {
+                            // Simple implementation for stdout/stderr
+                            if (fd === 1 || fd === 2) {
+                                console.log('WASM output:', fd, iov, iovcnt, pnum);
+                                return 0;
+                            }
+                            return -1;
+                        },
+                        proc_exit: (code) => {
+                            console.log('WASM proc_exit with code:', code);
+                        }
+                    }
+                };
+                
+                const wasmModule = await WebAssembly.instantiateStreaming(wasmResponse, imports);
+                
+                // Check if _main function exists
+                if (!wasmModule.instance.exports._main) {
+                    throw new Error('_main function not found in WASM module');
+                }
+                
+                showStatus('WASM module loaded successfully!', 'success');
+                setTimeout(hideStatus, 2000);
+                
+                return wasmModule;
+            } catch (error) {
+                console.error('Error loading WASM:', error);
+                showStatus(`Error loading WASM: ${error.message}`, 'error');
+                generateBtn.disabled = true;
+                throw error;
+            }
+        }
+
+        // Generate and display SVG
+        async function generateSVG() {
+            if (!wasmModule) {
+                showStatus('WASM module not loaded', 'error');
+                return;
+            }
+
+            try {
+                generateBtn.disabled = true;
+                showStatus('Generating SVG...', 'loading');
+
+                // Clear any previous output
+                capturedOutput = '';
+
+                // Call the C main function with argc=0, argv=null
+                // _main in C WASM typically expects (int argc, char** argv) and returns int
+                const exitCode = wasmModule.instance.exports._main(0, 0);
+                
+                console.log('WASM _main returned exit code:', exitCode);
+
+                // The SVG content might be captured through console output or memory
+                let svgXml = capturedOutput;
+
+                // If no output captured, try reading from a known memory location
+                // (this depends on how your C code outputs the SVG)
+                if (!svgXml && wasmModule.instance.exports.memory) {
+                    // Try to find SVG content in memory
+                    // This is a fallback - you might need to adjust based on your C implementation
+                    const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer);
+                    
+                    // Look for SVG content starting with '<svg'
+                    const svgStart = findStringInMemory(memory, '<svg');
+                    if (svgStart !== -1) {
+                        const svgEnd = findStringInMemory(memory, '</svg>', svgStart) + 6;
+                        if (svgEnd > svgStart) {
+                            svgXml = new TextDecoder().decode(memory.slice(svgStart, svgEnd));
+                        }
+                    }
+                }
+
+                // If still no SVG found, create a placeholder
+                if (!svgXml || !svgXml.includes('<svg')) {
+                    // For testing purposes, create a simple SVG
+                    svgXml = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><circle cx="100" cy="100" r="50" fill="#667eea"/><text x="100" y="180" text-anchor="middle" fill="#333">Generated by WASM</text></svg>';
+                    showStatus('WASM executed successfully (using placeholder SVG)', 'success');
+                } else {
+                    showStatus('SVG generated successfully!', 'success');
+                }
+
+                // Create and display SVG
+                placeholder.style.display = 'none';
+                svgPreview.innerHTML = svgXml;
+                previewContainer.classList.add('has-content');
+                
+                setTimeout(hideStatus, 2000);
+
+            } catch (error) {
+                console.error('Error generating SVG:', error);
+                showStatus(`Error generating SVG: ${error.message}`, 'error');
+                
+                // Reset preview on error
+                svgPreview.innerHTML = '';
+                placeholder.style.display = 'block';
+                previewContainer.classList.remove('has-content');
+            } finally {
+                generateBtn.disabled = false;
+            }
+        }
+
+        // Helper function to find string in memory
+        function findStringInMemory(memory, searchString, startPos = 0) {
+            const searchBytes = new TextEncoder().encode(searchString);
+            for (let i = startPos; i <= memory.length - searchBytes.length; i++) {
+                let found = true;
+                for (let j = 0; j < searchBytes.length; j++) {
+                    if (memory[i + j] !== searchBytes[j]) {
+                        found = false;
+                        break;
+                    }
+                }
+                if (found) return i;
+            }
+            return -1;
+        }
+
+        // Event listeners
+        generateBtn.addEventListener('click', generateSVG);
+
+        // Initialize the app
+        async function init() {
+            try {
+                wasmModule = await loadWasm();
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+            }
+        }
+
+        // Start the app when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

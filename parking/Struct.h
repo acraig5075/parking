@@ -1,0 +1,60 @@
+#pragma once
+
+#ifndef PI
+#define PI              3.14159265358979323846
+#endif
+#define GROUNDOFF       (0.000000000001)
+#define G_EPSILON       1.0E-4
+#define ARADIAN        (180.0 / PI)//(57.2957795131)
+#define RADIAN30       (PI / 6.0)
+#define RADIAN45       (PI * 0.25)
+#define RADIAN60       (PI / 3.0)
+#define RADIAN90       (PI * 0.50)
+#define RADIAN135      (PI * 0.75)
+#define RADIAN180      PI
+#define RADIAN225      (PI * 1.25)
+#define RADIAN270      (PI * 1.50)
+#define RADIAN315      (PI * 1.75)
+#define RADIAN360      (PI * 2.0)
+
+#define BASE_PARMGE(a,b,tol)    ((a) >= ((b) - (tol)))
+#define BASE_PARMZERO(a,tol)    (fabs((a)) <= (tol))
+#define BASE_PARMLT(a,b,tol)    ((a) < ((b) - (tol)))
+#define BASE_PARMLTZERO(a,tol)  ((a) < -(tol))
+#define BASE_PARMEQ(a,b,tol)    (fabs((a) - (b)) <= (tol))
+#define BASE_PARMGT(a,b,tol)    ((a) > ((b) + (tol)))
+#define BASE_PARMLE(a,b,tol)    ((a) <= ((b) + (tol)))
+#define BASE_PARMGTZERO(a,tol)  ((a) > (tol))
+#define BASE_PARMLEZERO(a,tol)  ((a) <= (tol))
+#define BASE_PARMGEZERO(a,tol)  ((a) >= -(tol))
+#define BASE_PARMNOTZERO(a,tol) (fabs((a)) > (tol))
+#define BASE_PARMNE(a,b,tol)    (fabs((a) - (b)) > (tol))
+
+#define PARMGE(a,b)    BASE_PARMGE((a),(b),(GROUNDOFF))
+#define PARMZERO(a)    BASE_PARMZERO((a),(GROUNDOFF))
+#define PARMLT(a,b)    BASE_PARMLT((a),(b),(GROUNDOFF))
+#define PARMLTZERO(a)  BASE_PARMLTZERO((a),(GROUNDOFF))
+#define PARMEQ(a,b)    BASE_PARMEQ((a),(b),(GROUNDOFF))
+#define PARMGT(a,b)    BASE_PARMGT((a),(b),(GROUNDOFF))
+#define PARMLE(a,b)    BASE_PARMLE((a),(b),(GROUNDOFF))
+#define PARMGTZERO(a)  BASE_PARMGTZERO((a),(GROUNDOFF))
+#define PARMLEZERO(a)  BASE_PARMLEZERO((a),(GROUNDOFF))
+#define PARMGEZERO(a)  BASE_PARMGEZERO((a),(GROUNDOFF))
+#define PARMNOTZERO(a) BASE_PARMNOTZERO((a),(GROUNDOFF))
+#define PARMNE(a,b)    BASE_PARMNE((a),(b),(GROUNDOFF))
+
+#define GPARMGE(a,b)    BASE_PARMGE((a),(b),(G_EPSILON))
+#define GPARMZERO(a)    BASE_PARMZERO((a),(G_EPSILON))
+#define GPARMLT(a,b)    BASE_PARMLT((a),(b),(G_EPSILON))
+#define GPARMLTZERO(a)  BASE_PARMLTZERO((a),(G_EPSILON))
+#define GPARMEQ(a,b)    BASE_PARMEQ((a),(b),(G_EPSILON))
+#define GPARMGT(a,b)    BASE_PARMGT((a),(b),(G_EPSILON))
+#define GPARMLE(a,b)    BASE_PARMLE((a),(b),(G_EPSILON))
+#define GPARMGTZERO(a)  BASE_PARMGTZERO((a),(G_EPSILON))
+#define GPARMLEZERO(a)  BASE_PARMLEZERO((a),(G_EPSILON))
+#define GPARMGEZERO(a)  BASE_PARMGEZERO((a),(G_EPSILON))
+#define GPARMNOTZERO(a) BASE_PARMNOTZERO((a),(G_EPSILON))
+#define GPARMNE(a,b)    BASE_PARMNE((a),(b),(G_EPSILON))
+
+#define deg_rad(d)     (static_cast<double>((d)) * PI / 180.0)
+#define rad_deg(r)     (static_cast<double>((r)) * 180.0 / PI)

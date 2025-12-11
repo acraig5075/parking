@@ -104,6 +104,7 @@ struct PixelPolygon
 struct CImageData
 {
 	std::vector<PixelLine> lines;
+	std::vector<PixelLine> paths;
 	std::vector<PixelPolygon> polygons;
 	std::vector<PixelPolygon> arrows;
 	PixelPoint minimum;

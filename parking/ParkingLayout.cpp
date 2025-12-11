@@ -242,26 +242,28 @@ CoreVector3 CParkingLayout::GetBaselineTranslation() const
 CImageData CParkingLayout::GetImageData(const ParkingParams &params) const
 {
 	std::vector<PixelLine> imgLines;
+	std::vector<PixelLine> imgPaths;
 	std::vector<PixelPolygon> imgPolygons;
 	std::vector<PixelPolygon> imgArrows;
 
 	const int scaleFactor = 10; // scale metres to decimetres
 
 	// Bays
-	for (const auto &row : m_rowsUCS)
+	if (params.showBays)
 		{
-		if (!params.showBays)
-			continue;
-		for (const auto &bay : row.m_baysUCS)
+		for (const auto &row : m_rowsUCS)
 			{
-			for (const auto &paintLine : bay.m_lines)
+			for (const auto &bay : row.m_baysUCS)
 				{
-				PixelLine imgLine;
-				imgLine.start.x = paintLine.start.x * scaleFactor;
-				imgLine.start.y = paintLine.start.y * scaleFactor;
-				imgLine.end.x = paintLine.end.x * scaleFactor;
-				imgLine.end.y = paintLine.end.y * scaleFactor;
-				imgLines.push_back(imgLine);
+				for (const auto &paintLine : bay.m_lines)
+					{
+					PixelLine imgLine;
+					imgLine.start.x = paintLine.start.x * scaleFactor;
+					imgLine.start.y = paintLine.start.y * scaleFactor;
+					imgLine.end.x = paintLine.end.x * scaleFactor;
+					imgLine.end.y = paintLine.end.y * scaleFactor;
+					imgLines.push_back(imgLine);
+					}
 				}
 			}
 		}
@@ -284,23 +286,38 @@ CImageData CParkingLayout::GetImageData(const ParkingParams &params) const
 		}
 
 	// Arrows
-	for (const auto &row : m_rowsUCS)
+	if (params.showArrows)
 		{
-		if (!params.showArrows)
-			continue;
-		PixelPolygon imgPolygon;
-		for (const auto &pt : row.m_arrow.m_polygon)
+		for (const auto &row : m_rowsUCS)
 			{
-			PixelPoint imgPoint;
-			imgPoint.x = pt.x * scaleFactor;
-			imgPoint.y = pt.y * scaleFactor;
-			imgPolygon.points.push_back(imgPoint);
+			PixelPolygon imgPolygon;
+			for (const auto &pt : row.m_arrow.m_polygon)
+				{
+				PixelPoint imgPoint;
+				imgPoint.x = pt.x * scaleFactor;
+				imgPoint.y = pt.y * scaleFactor;
+				imgPolygon.points.push_back(imgPoint);
+				}
+			imgPolygon.movement[0].x = row.m_arrow.m_movement[0].x * scaleFactor;
+			imgPolygon.movement[0].y = row.m_arrow.m_movement[0].y * scaleFactor;
+			imgPolygon.movement[1].x = row.m_arrow.m_movement[1].x * scaleFactor;
+			imgPolygon.movement[1].y = row.m_arrow.m_movement[1].y * scaleFactor;
+			imgArrows.push_back(imgPolygon);
 			}
-		imgPolygon.movement[0].x = row.m_arrow.m_movement[0].x * scaleFactor;
-		imgPolygon.movement[0].y = row.m_arrow.m_movement[0].y * scaleFactor;
-		imgPolygon.movement[1].x = row.m_arrow.m_movement[1].x * scaleFactor;
-		imgPolygon.movement[1].y = row.m_arrow.m_movement[1].y * scaleFactor;
-		imgArrows.push_back(imgPolygon);
+		}
+
+	// Paths
+	if (params.showPaths)
+		{
+		for (const auto &row : m_rowsUCS)
+			{
+			PixelLine imgLine;
+			imgLine.start.x = row.m_start.x * scaleFactor;
+			imgLine.start.y = row.m_start.y * scaleFactor;
+			imgLine.end.x = row.m_end.x * scaleFactor;
+			imgLine.end.y = row.m_end.y * scaleFactor;
+			imgPaths.push_back(imgLine);
+			}
 		}
 
 	double minx = std::numeric_limits<double>::max();
@@ -308,14 +325,16 @@ CImageData CParkingLayout::GetImageData(const ParkingParams &params) const
 	double maxx = std::numeric_limits<double>::lowest();
 	double maxy = std::numeric_limits<double>::lowest();
 
-	// Bays min/max extents
-	for (const auto &line : imgLines)
+	auto MinMaxLine = [&minx, &miny, &maxx, &maxy](const std::vector<PixelLine> &lines)
 		{
-		minx = std::min(minx, std::min(line.start.x, line.end.x));
-		miny = std::min(miny, std::min(line.start.y, line.end.y));
-		maxx = std::max(maxx, std::max(line.start.x, line.end.x));
-		maxy = std::max(maxy, std::max(line.start.y, line.end.y));
-		}
+		for (const auto &line : lines)
+			{
+			minx = std::min(minx, std::min(line.start.x, line.end.x));
+			miny = std::min(miny, std::min(line.start.y, line.end.y));
+			maxx = std::max(maxx, std::max(line.start.x, line.end.x));
+			maxy = std::max(maxy, std::max(line.start.y, line.end.y));
+			}
+		};
 
 	auto MinMaxPolygon = [&minx, &miny, &maxx, &maxy](const std::vector<PixelPolygon> &polygons)
 		{
@@ -331,6 +350,9 @@ CImageData CParkingLayout::GetImageData(const ParkingParams &params) const
 			}
 		};
 
+	MinMaxLine(imgLines);
+	MinMaxLine(imgPaths);
+
 	MinMaxPolygon(imgPolygons);
 	MinMaxPolygon(imgArrows);
 
@@ -338,6 +360,7 @@ CImageData CParkingLayout::GetImageData(const ParkingParams &params) const
 	imageData.lines = std::move(imgLines);
 	imageData.polygons = std::move(imgPolygons);
 	imageData.arrows = std::move(imgArrows);
+	imageData.paths = std::move(imgPaths);
 	imageData.minimum = PixelPoint{ minx, miny };
 	imageData.maximum = PixelPoint{ maxx, maxy };
 	return imageData;

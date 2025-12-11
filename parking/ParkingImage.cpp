@@ -11,12 +11,14 @@
 constexpr double POLY_STROKE = 2.5;
 constexpr double LINE_STROKE = 1.0;
 constexpr double ARROW_STROKE = 2.5;
+constexpr double PATH_STROKE = 3.0;
 
 
 bool MakeSVG(const std::string &filename, const CImageData &imageData)
 {
 	svg::ShapeColl elements;
 
+	// Caps
 	for (const auto &polygon : imageData.polygons)
 		{
 		svg::Polygon poly{ svg::Fill{svg::Color{ 144, 238, 144 }}, svg::Stroke{POLY_STROKE, svg::Color::Green} };
@@ -27,6 +29,7 @@ bool MakeSVG(const std::string &filename, const CImageData &imageData)
 		elements << poly;
 		}
 
+	// Bays
 	for (const auto &line : imageData.lines)
 		{
 		svg::Point p1(line.start.x, line.start.y);
@@ -34,6 +37,15 @@ bool MakeSVG(const std::string &filename, const CImageData &imageData)
 		elements << svg::Line{ p1, p2, svg::Stroke{LINE_STROKE, svg::Color::Black} };
 		}
 
+	// Paths
+	for (const auto &line : imageData.paths)
+		{
+		svg::Point p1(line.start.x, line.start.y);
+		svg::Point p2(line.end.x, line.end.y);
+		elements << svg::Line{ p1, p2, svg::Stroke{PATH_STROKE, svg::Color::Blue} };
+		}
+
+	// Arrows
 	for (const auto &arrow : imageData.arrows)
 		{
 		svg::Polygon poly{ svg::Fill{svg::Color{ 238, 144, 144 }}, svg::Stroke{ARROW_STROKE, svg::Color::Red} };
@@ -72,6 +84,7 @@ bool MakeSVG(std::string &byteData, const CImageData &imageData)
 {
 	svg::ShapeColl elements;
 
+	// Caps
 	for (const auto &polygon : imageData.polygons)
 		{
 		svg::Polygon poly{ svg::Fill{svg::Color{ 144, 238, 144 }}, svg::Stroke{POLY_STROKE, svg::Color::Green} };
@@ -82,6 +95,7 @@ bool MakeSVG(std::string &byteData, const CImageData &imageData)
 		elements << poly;
 		}
 
+	// Bays
 	for (const auto &line : imageData.lines)
 		{
 		svg::Point p1(line.start.x, line.start.y);
@@ -89,6 +103,15 @@ bool MakeSVG(std::string &byteData, const CImageData &imageData)
 		elements << svg::Line{ p1, p2, svg::Stroke{LINE_STROKE, svg::Color::Black} };
 		}
 
+	// Paths
+	for (const auto &line : imageData.paths)
+		{
+		svg::Point p1(line.start.x, line.start.y);
+		svg::Point p2(line.end.x, line.end.y);
+		elements << svg::Line{ p1, p2, svg::Stroke{PATH_STROKE, svg::Color::Blue} };
+		}
+
+	// Arrows
 	for (const auto &arrow : imageData.arrows)
 		{
 		svg::Polygon poly{ svg::Fill{svg::Color{ 238, 144, 144 }}, svg::Stroke{ARROW_STROKE, svg::Color::Red} };

@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# BCGControlBar Pro proprietary files
+mfc/Libs/BCGCBPRO*.lib
+mfc/Include/BCGPro/
+/parking/ParkingImage - first.cpp
+/parking/ParkingImage - second.cpp
+/mfc/parking.svg

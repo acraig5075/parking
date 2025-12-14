@@ -94,18 +94,25 @@ std::vector<ParkingBay> CParkingLayout::MakeBaysOCS(double totalSpan, double sta
 	const double tana = tan(radians);
 	const double singleSpan = GPARMZERO(radians) ? params.width : params.width / sina;
 
+	double lcomp = params.width / tana; // extension along length
+
+	double xoff = cosa * (params.length + lcomp);
+	double yoff = sina * (params.length + lcomp);
+
+	// Consider angled bays
+	if (PARMNE(radians, RADIAN90))
+		startOff += xoff;
+
+	// Position the bays such that the remaining gap is averaged on both ends
+	double remaining = std::fmod(totalSpan - startOff - stopOff, singleSpan);
+	startOff += (remaining / 2);
+
 	if (PARMGTZERO(singleSpan))
 		{
 		CorePt3 fl; // front left corner
 		CorePt3 fr; // front right corner
 		CorePt3 rr; // rear right corner
 		CorePt3 rl; // rear left corner
-
-		double xcomp = singleSpan; // component along x-axis
-		double lcomp = params.width / tana; // extension along length
-
-		double xoff = cosa * (params.length + lcomp);
-		double yoff = sina * (params.length + lcomp);
 
 		for (int i = 0;; ++i)
 			{
@@ -387,7 +394,7 @@ std::vector<Cap> CParkingLayout::MakeEndCapsOCS(const ParkingParams &params) con
 	startCap.m_polygon.push_back(fl);
 	startCap.m_succeedingBay = params.capWidth;
 
-	fr.x = rr.x = -params.capWidth;
+	fr.x = rr.x = params.capWidth;
 
 	if (ParkingParams::LHS == params.driveDirection)
 		fl.y = fr.y = params.length + params.capFrontExt;

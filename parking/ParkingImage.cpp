@@ -56,7 +56,7 @@ bool MakeSVG(const CImageData &imageData, const std::string &filename, std::stri
 		svg::Point movement;
 		movement.x = arrow.movement[1].x - arrow.movement[0].x;
 		movement.y = arrow.movement[1].y - arrow.movement[0].y;
-		poly << svg::AnimateTransform{ svg::Point{ 0,0 }, movement, "1s" };
+		poly << svg::AnimateTransform{ svg::Point{ 0, 0 }, movement, "1s" };
 		elements << poly;
 		}
 
@@ -104,25 +104,17 @@ void DeserializeParams(const std::string &jsonParams, ParkingParams &params)
 	params.showCaps        = json["showCaps"].template get<bool>();
 	params.showArrows      = json["showArrows"].template get<bool>();
 	params.showPaths       = json["showPaths"].template get<bool>();
-	}
+}
 
 bool parking_layout_svg_file(const std::string &filename, const std::string &wktGeometry, const std::string &jsonParams)
 {
 	ParkingParams params;
 	DeserializeParams(jsonParams, params);
 
-	std::vector<CorePt3> linePath =
-		{
-			{ 50010.0, 60010.0, 0 },
-			{ 50030.0, 60030.0, 0 },
-			{ 50030.0, 60050.0, 0 },
-			{ 50050.0, 60070.0, 0 },
-		};
-
 	CParkingLayout layout;
-	layout.Make(linePath, params);
-	CImageData imageData = layout.GetImageData(params);
+	layout.Make(wktGeometry, params);
 
+	CImageData imageData = layout.GetImageData(params);
 
 	std::string unused;
 	return MakeSVG(imageData, filename, unused);
@@ -133,16 +125,9 @@ bool parking_layout_svg_bytes(std::string &byteData, const std::string &wktGeome
 	ParkingParams params;
 	DeserializeParams(jsonParams, params);
 
-	std::vector<CorePt3> linePath =
-		{
-			{ 50010.0, 60010.0, 0 },
-			{ 50030.0, 60030.0, 0 },
-			{ 50030.0, 60050.0, 0 },
-			{ 50050.0, 60070.0, 0 },
-		};
-
 	CParkingLayout layout;
-	layout.Make(linePath, params);
+	layout.Make(wktGeometry, params);
+
 	CImageData imageData = layout.GetImageData(params);
 
 	std::string unused;

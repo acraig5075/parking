@@ -132,7 +132,7 @@ BOOL CmfcDlg::OnInitDialog()
 		pLayout->AddAnchor(IDCANCEL, CBCGPStaticLayout::e_MoveTypeBoth, CBCGPStaticLayout::e_SizeTypeNone);
 		}
 
-	CheckRadioButton(IDC_DRIVE_LHS_RADIO, IDC_DRIVE_RHS_RADIO, IDC_DRIVE_RHS_RADIO);
+	CheckRadioButton(IDC_DRIVE_LHS_RADIO, IDC_DRIVE_RHS_RADIO, IDC_DRIVE_LHS_RADIO);
 	CheckRadioButton(IDC_ROWS_SINGLE_RADIO, IDC_ROWS_DOUBLE_RADIO, IDC_ROWS_SINGLE_RADIO);
 	m_sideLinesCombo.SetCurSel(2);
 	m_frontLinesCombo.SetCurSel(2);
@@ -207,14 +207,30 @@ void CmfcDlg::RedrawParking()
 {
 	std::string params = Serialize();
 
+	//std::string wkt =
+	//	"GEOMETRYCOLLECTION ("
+	//	"LINESTRING (50010.0 60010.0, 50030.0 60030.0, 50030.0 60050.0, 50050.0 60070.0)"
+	//	")";
+
+	std::string wkt =
+		"GEOMETRYCOLLECTION ("
+		"POLYGON ((41194.54 3751856.80, 41160.56 3751846.60, 41150.17 3751895.99, 41185.19 3751902.74, 41194.54 3751856.80)), "
+		"LINESTRING (41168.15 3751895.60, 41177.68 3751853.01)"
+		")";
+
+	//std::string wkt =
+	//	"GEOMETRYCOLLECTION ("
+	//	"POLYGON ((41194.54 3751856.80, 41160.56 3751846.60, 41150.17 3751895.99, 41185.19 3751902.74, 41194.54 3751856.80))"
+	//	")";
+
 	std::string buffer;
-	if (parking_layout_svg_bytes(buffer, "", params))
+	if (parking_layout_svg_bytes(buffer, wkt, params))
 		{
 		m_svgCtrl.LoadFromBuffer(CString{ buffer.c_str() });
 		}
 
 	// Store to file as well
-	parking_layout_svg_file("parking.svg", "", params);
+	parking_layout_svg_file("parking.svg", wkt, params);
 }
 
 void CmfcDlg::Gather()

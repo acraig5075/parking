@@ -36,6 +36,9 @@
     <ClInclude Include="ParkingImage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="WKTParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ParkingImage.cpp">
@@ -48,6 +51,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Core.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WKTParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -68,3 +68,5 @@ public:
 
 	double m[4][4] = { {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0} };
 };
+
+bool IsCounterClockwise(const std::vector<CorePt3> &ring);

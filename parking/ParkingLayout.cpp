@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "ParkingLayout.h"
 #include "Struct.h"
+#include "WKTParser.h"
 
 /// ParkingParams class
 
@@ -29,27 +30,78 @@ PaintLine::PaintLine(const CorePt3 &start, const CorePt3 &end)
 
 /// ParkingLayout class
 
+void CParkingLayout::Make(const std::string &wktGeometry, const ParkingParams &params)
+{
+	WKTParser parser(wktGeometry);
+	parser.parse();
+
+	// Polygons
+	for (const auto &pg : parser.m_polygons)
+		{
+		std::vector<CorePt3> polyPath;
+		for (const auto pt : pg.rings[0])
+			{
+			polyPath.emplace_back(pt.x, pt.y, 0.0);
+			}
+
+		if (bool ccw = IsCounterClockwise(polyPath); (ccw && params.LHS == params.driveDirection) || (!ccw && params.RHS == params.driveDirection))
+			std::reverse(polyPath.begin(), polyPath.end());
+
+		Make(polyPath, params);
+		}
+
+	// Linestrings
+	for (const auto &ls : parser.m_linestrings)
+		{
+		std::vector<CorePt3> linePath;
+		for (const auto pt : ls.WKTPoints)
+			{
+			linePath.emplace_back(pt.x, pt.y, 0.0);
+			}
+
+		Make(linePath, params);
+		}
+}
+
 void CParkingLayout::Make(const std::vector<CorePt3> &path, const ParkingParams &params)
 {
 	size_t nRows = path.size();
+	if (nRows < 2)
+		return;
 
-	// Islands at ends
-	std::vector<Cap> endCaps;
-	endCaps = MakeEndCapsOCS(params);
-	endCaps[0] = TransformCapToUCS(path[0], path[1], endCaps[0]);
-	endCaps[1] = TransformCapToUCS(path[nRows - 1], path[nRows- 2], endCaps[1]);
-	m_capsUCS.insert(m_capsUCS.end(), endCaps.cbegin(), endCaps.cend());
+	size_t j = m_capsUCS.size();
 
-	// Islands at bends
-	std::vector<Cap> bendCaps;
-	bendCaps = MakeBendCaps(path, params);
-	m_capsUCS.insert(m_capsUCS.end() - 1, bendCaps.cbegin(), bendCaps.cend());
+	bool isPolygon = GPARMZERO(path[0].PlanDistanceTo(path[path.size() - 1])); 
+
+	if (isPolygon)
+		{
+		// Islands at bends
+		std::vector<Cap> bendCaps;
+		bendCaps = MakeBendCaps(path, params);
+		m_capsUCS.insert(m_capsUCS.end(), bendCaps.cbegin(), bendCaps.cend());
+		}
+	else
+		{
+		// Islands at ends
+		std::vector<Cap> endCaps;
+		endCaps = MakeEndCapsOCS(params);
+		endCaps[0] = TransformCapToUCS(path[0], path[1], endCaps[0]);
+		endCaps[1] = TransformCapToUCS(path[nRows - 1], path[nRows - 2], endCaps[1]);
+		m_capsUCS.insert(m_capsUCS.end(), endCaps.cbegin(), endCaps.cend());
+
+		// Islands at bends
+		std::vector<Cap> bendCaps;
+		bendCaps = MakeBendCaps(path, params);
+		m_capsUCS.insert(m_capsUCS.end() - 1, bendCaps.cbegin(), bendCaps.cend());
+		}
 
 	for (size_t i = 1; i < path.size(); ++i)
 		{
 		double span = path[i - 1].PlanDistanceTo(path[i]);
-		double start = m_capsUCS[i - 1].m_succeedingBay;
-		double stop = m_capsUCS[i].m_preceedingBay;
+		size_t startCap = j + i - 1;
+		size_t stopCap = isPolygon && i == path.size() - 1 ? j : j + i;
+		double start = m_capsUCS[startCap].m_succeedingBay;
+		double stop = m_capsUCS[stopCap].m_preceedingBay;
 
 		// Parking bays
 		std::vector<ParkingBay> bays;
@@ -464,12 +516,8 @@ std::vector<Cap> CParkingLayout::MakeBendCaps(const std::vector<CorePt3> &path, 
 {
 	std::vector<Cap> caps;
 
-	for (size_t i = 2; i < path.size(); ++i)
+	auto BendPoint = [params, &caps](const CorePt3 &A, const CorePt3 &B, const CorePt3 &C)
 		{
-		CorePt3 A = path[i - 2];
-		CorePt3 B = path[i - 1];
-		CorePt3 C = path[i];
-
 		bool baysOnBendLeft = params.RHS == params.driveDirection;
 		double bendAngle = GetAngleAtB(A, B, C, baysOnBendLeft);
 		double bisectAngle = 0.5 * bendAngle;
@@ -505,6 +553,16 @@ std::vector<Cap> CParkingLayout::MakeBendCaps(const std::vector<CorePt3> &path, 
 		cap.m_succeedingBay = capWidthRear;
 
 		caps.push_back(cap);
+		};
+
+	if (bool isPolygon = GPARMZERO(path[0].PlanDistanceTo(path[path.size() - 1])); isPolygon)
+		{
+		BendPoint(path[path.size() - 2], path[0], path[1]);
+		}
+
+	for (size_t i = 2; i < path.size(); ++i)
+		{
+		BendPoint(path[i - 2], path[i - 1], path[i]);
 		}
 
 	return caps;

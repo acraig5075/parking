@@ -116,10 +116,13 @@ class CParkingLayout
 public:
 	CParkingLayout(void) = default;
 
-	void Make(const std::vector<CorePt3> &path, const ParkingParams &params);
+	void Make(const std::string &wktGeometry, const ParkingParams &params);
+
 	CImageData GetImageData(const ParkingParams &params) const;
 
 private:
+	void Make(const std::vector<CorePt3> &path, const ParkingParams &params);
+
 	std::vector<ParkingBay> MakeBaysOCS(double span, double startOff, double stopOff, const ParkingParams &params) const;
 	std::vector<ParkingBay> TransformBaysToUCS(const CorePt3 &p1, const CorePt3 &p2, const std::vector<ParkingBay> &baysOCS) const;
 

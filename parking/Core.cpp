@@ -298,3 +298,23 @@ void C3DMatrix::CompositeTranslate(const CoreVector3 &v)
 	tmp.MakeTranslate(v.x, v.y, v.z);
 	MultMatrix(&tmp);
 }
+
+bool IsCounterClockwise(const std::vector<CorePt3> &ring)
+{
+	if (ring.size() < 3)
+		return false;
+
+	double signedArea = 0.0;
+
+	// Iterate over edges
+	for (size_t i = 0; i < ring.size(); ++i)
+		{
+		const CorePt3 &p1 = ring[i];
+		const CorePt3 &p2 = ring[(i + 1) % ring.size()];
+
+		signedArea += (p1.x * p2.y) - (p2.x * p1.y);
+		}
+
+	// Positive area => CCW, Negative => CW
+	return signedArea > 0.0;
+}

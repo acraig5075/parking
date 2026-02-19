@@ -13,7 +13,11 @@ constexpr double LINE_STROKE = 1.0;
 constexpr double ARROW_STROKE = 2.5;
 constexpr double PATH_STROKE = 3.0;
 
-
+/// Generates an SVG image from the given image data and saves it to a file.
+/// @param imageData The data containing polygons, lines, paths, and arrows for the parking layout.
+/// @param filename The path where the generated SVG should be saved.
+/// @param byteData A reference to a string where the byte data of the SVG can be stored (optional).
+/// @return True if the SVG was successfully created and saved, false otherwise.
 bool MakeSVG(const CImageData &imageData, const std::string &filename, std::string &byteData)
 {
 	svg::ShapeColl elements;
@@ -82,6 +86,9 @@ bool MakeSVG(const CImageData &imageData, const std::string &filename, std::stri
 	return true;
 }
 
+/// Deserializes the given JSON parameters into a ParkingParams object.
+/// @param jsonParams A string containing the JSON parameters to be deserialized.
+/// @param params The reference to the ParkingParams object where the deserialized data should be stored.
 void DeserializeParams(const std::string &jsonParams, ParkingParams &params)
 {
 	if (jsonParams.empty())
@@ -106,6 +113,11 @@ void DeserializeParams(const std::string &jsonParams, ParkingParams &params)
 	params.showPaths       = json["showPaths"].template get<bool>();
 }
 
+/// Creates an SVG file from the given WKT geometry and JSON parameters.
+/// @param filename The path where the generated SVG should be saved.
+/// @param wktGeometry A string containing the Well-Known Text representation of the parking layout.
+/// @param jsonParams A string containing the JSON parameters for configuring the parking layout.
+/// @return True if the SVG was successfully created and saved, false otherwise.
 bool parking_layout_svg_file(const std::string &filename, const std::string &wktGeometry, const std::string &jsonParams)
 {
 	ParkingParams params;
@@ -120,6 +132,11 @@ bool parking_layout_svg_file(const std::string &filename, const std::string &wkt
 	return MakeSVG(imageData, filename, unused);
 }
 
+/// Creates an SVG byte data from the given WKT geometry and JSON parameters.
+/// @param byteData A reference to a string where the byte data of the SVG should be stored.
+/// @param wktGeometry A string containing the Well-Known Text representation of the parking layout.
+/// @param jsonParams A string containing the JSON parameters for configuring the parking layout.
+/// @return True if the SVG byte data was successfully generated, false otherwise.
 bool parking_layout_svg_bytes(std::string &byteData, const std::string &wktGeometry, const std::string &jsonParams)
 {
 	ParkingParams params;

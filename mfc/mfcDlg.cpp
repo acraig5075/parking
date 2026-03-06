@@ -273,6 +273,11 @@ void CmfcDlg::Gather()
 	m_json["showCaps"] = BST_CHECKED == IsDlgButtonChecked(IDC_SHOWCAPSCHK);
 	m_json["showArrows"] = BST_CHECKED == IsDlgButtonChecked(IDC_SHOWARROWSCHK);
 	m_json["showPaths"] = BST_CHECKED == IsDlgButtonChecked(IDC_SHOWPATHSCHK);
+
+	// store the settings to file as well for easy retrieval
+	CStdioFile file(_T("parking.json"), CFile::modeCreate | CFile::modeWrite | CFile::typeText);
+	file.WriteString(CA2T(m_json.dump(2).c_str()));
+	file.Close();
 }
 
 std::string CmfcDlg::Serialize() const

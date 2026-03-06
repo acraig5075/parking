@@ -1,4 +1,3 @@
-
 // mfcDlg.cpp : implementation file
 //
 
@@ -57,6 +56,27 @@ CmfcDlg::CmfcDlg(CWnd *pParent /*=nullptr*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	EnableLayout();
+
+	m_wktSamples.Add(CString
+		{
+		L"GEOMETRYCOLLECTION ("
+		L"LINESTRING (50010.0 60010.0, 50030.0 60030.0, 50030.0 60050.0, 50050.0 60070.0)"
+		L")" });
+
+	m_wktSamples.Add(CString
+		{
+		L"GEOMETRYCOLLECTION ("
+		L"POLYGON ((41194.54 3751856.80, 41160.56 3751846.60, 41150.17 3751895.99, 41185.19 3751902.74, 41194.54 3751856.80))"
+		L")" });
+
+	m_wktSamples.Add(CString
+		{
+		L"GEOMETRYCOLLECTION ("
+		L"POLYGON ((41194.54 3751856.80, 41160.56 3751846.60, 41150.17 3751895.99, 41185.19 3751902.74, 41194.54 3751856.80)), "
+		L"LINESTRING (41168.15 3751895.60, 41177.68 3751853.01)"
+		L")" });
+
+	m_currSample = 0;
 }
 
 void CmfcDlg::DoDataExchange(CDataExchange *pDX)
@@ -66,7 +86,8 @@ void CmfcDlg::DoDataExchange(CDataExchange *pDX)
 	DDX_Control(pDX, IDC_SIDE_LINES_COMBO, m_sideLinesCombo);
 	DDX_Control(pDX, IDC_FRONT_LINES_COMBO, m_frontLinesCombo);
 	DDX_Control(pDX, IDC_REAR_LINES_COMBO, m_rearLinesCombo);
-}
+	DDX_Control(pDX, IDC_WKTEDIT, m_wktGeometryEdit);
+	}
 
 BEGIN_MESSAGE_MAP(CmfcDlg, CBCGPDialog)
 	ON_WM_SYSCOMMAND()
@@ -89,6 +110,7 @@ BEGIN_MESSAGE_MAP(CmfcDlg, CBCGPDialog)
 	ON_BN_CLICKED(IDC_SHOWCAPSCHK, &CmfcDlg::OnChangeParameter)
 	ON_BN_CLICKED(IDC_SHOWARROWSCHK, &CmfcDlg::OnChangeParameter)
 	ON_BN_CLICKED(IDC_SHOWPATHSCHK, &CmfcDlg::OnChangeParameter)
+	ON_BN_CLICKED(IDC_SAMPLEBTN, &CmfcDlg::OnSampleBtn)
 END_MESSAGE_MAP()
 
 
@@ -131,6 +153,8 @@ BOOL CmfcDlg::OnInitDialog()
 		pLayout->AddAnchor(IDC_IMAGE, CBCGPStaticLayout::e_MoveTypeNone, CBCGPStaticLayout::e_SizeTypeBoth);
 		pLayout->AddAnchor(IDCANCEL, CBCGPStaticLayout::e_MoveTypeBoth, CBCGPStaticLayout::e_SizeTypeNone);
 		}
+
+	m_wktGeometryEdit.SetWindowTextW(m_wktSamples.GetAt(m_currSample));
 
 	CheckRadioButton(IDC_DRIVE_LHS_RADIO, IDC_DRIVE_RHS_RADIO, IDC_DRIVE_LHS_RADIO);
 	CheckRadioButton(IDC_ROWS_SINGLE_RADIO, IDC_ROWS_DOUBLE_RADIO, IDC_ROWS_SINGLE_RADIO);
@@ -207,21 +231,9 @@ void CmfcDlg::RedrawParking()
 {
 	std::string params = Serialize();
 
-	//std::string wkt =
-	//	"GEOMETRYCOLLECTION ("
-	//	"LINESTRING (50010.0 60010.0, 50030.0 60030.0, 50030.0 60050.0, 50050.0 60070.0)"
-	//	")";
-
-	std::string wkt =
-		"GEOMETRYCOLLECTION ("
-		"POLYGON ((41194.54 3751856.80, 41160.56 3751846.60, 41150.17 3751895.99, 41185.19 3751902.74, 41194.54 3751856.80)), "
-		"LINESTRING (41168.15 3751895.60, 41177.68 3751853.01)"
-		")";
-
-	//std::string wkt =
-	//	"GEOMETRYCOLLECTION ("
-	//	"POLYGON ((41194.54 3751856.80, 41160.56 3751846.60, 41150.17 3751895.99, 41185.19 3751902.74, 41194.54 3751856.80))"
-	//	")";
+	CString strWkt;
+	m_wktGeometryEdit.GetWindowText(strWkt);
+	std::string wkt{ CW2A(strWkt) };
 
 	std::string buffer;
 	if (parking_layout_svg_bytes(buffer, wkt, params))
@@ -271,5 +283,12 @@ std::string CmfcDlg::Serialize() const
 void CmfcDlg::OnChangeParameter()
 {
 	Gather();
+	RedrawParking();
+}
+
+void CmfcDlg::OnSampleBtn()
+{
+	m_currSample = (m_currSample + 1) % m_wktSamples.GetCount();
+	m_wktGeometryEdit.SetWindowTextW(m_wktSamples.GetAt(m_currSample));
 	RedrawParking();
 }

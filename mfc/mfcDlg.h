@@ -1,4 +1,3 @@
-
 // mfcDlg.h : header file
 //
 
@@ -38,10 +37,15 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	afx_msg void OnChangeParameter();
+	afx_msg void OnSampleBtn();
 
 private:
 	nlohmann::json m_json;
+	CStringArray m_wktSamples;
+	INT_PTR m_currSample = -1;
+
 	CSVGImageStatic m_svgCtrl;
+	CBCGPEdit m_wktGeometryEdit;
 	CBCGPComboBox m_sideLinesCombo;
 	CBCGPComboBox m_frontLinesCombo;
 	CBCGPComboBox m_rearLinesCombo;

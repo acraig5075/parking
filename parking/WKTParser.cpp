@@ -234,7 +234,7 @@ void WKTParser::parseGeometry()
 		parsePolygon();
 	else if (g == "MULTILINESTRING")
 		parseMultiLineString();
-	else if (g == "MULTIPOLYGONE")
+	else if (g == "MULTIPOLYGON")
 		parseMultiPolygon();
 	else if (g == "GEOMETRYCOLLECTION")
 		parseGeometryCollection();

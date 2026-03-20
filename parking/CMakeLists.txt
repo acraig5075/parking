@@ -1,12 +1,14 @@
 add_library(parking STATIC
     Core.cpp
+    ParkingImage.cpp
     ParkingLayout.cpp
-    parking.cpp
+    WKTParser.cpp
     pch.cpp
 )
 
 target_include_directories(parking PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Include
 )
 
 target_precompile_headers(parking PRIVATE pch.h)

@@ -49,7 +49,7 @@ class Cap
 {
 public:
 	std::vector<CorePt2> m_polygon;
-	double m_preceedingBay = 0.0;
+	double m_precedingBay = 0.0;
 	double m_succeedingBay = 0.0;
 };
 

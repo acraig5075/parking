@@ -39,7 +39,7 @@ void CParkingLayout::Make(const std::string &wktGeometry, const ParkingParams &p
 	for (const auto &pg : parser.m_polygons)
 		{
 		std::vector<CorePt2> polyPath;
-		for (const auto pt : pg.rings[0])
+		for (const auto &pt : pg.rings[0])
 			{
 			polyPath.emplace_back(pt.x, pt.y);
 			}
@@ -54,7 +54,7 @@ void CParkingLayout::Make(const std::string &wktGeometry, const ParkingParams &p
 	for (const auto &ls : parser.m_linestrings)
 		{
 		std::vector<CorePt2> linePath;
-		for (const auto pt : ls.WKTPoints)
+		for (const auto &pt : ls.WKTPoints)
 			{
 			linePath.emplace_back(pt.x, pt.y);
 			}
@@ -101,7 +101,7 @@ void CParkingLayout::Make(const std::vector<CorePt2> &path, const ParkingParams 
 		size_t startCap = j + i - 1;
 		size_t stopCap = isPolygon && i == path.size() - 1 ? j : j + i;
 		double start = m_capsUCS[startCap].m_succeedingBay;
-		double stop = m_capsUCS[stopCap].m_preceedingBay;
+		double stop = m_capsUCS[stopCap].m_precedingBay;
 
 		// Parking bays
 		std::vector<ParkingBay> bays;
@@ -458,7 +458,7 @@ std::vector<Cap> CParkingLayout::MakeEndCapsOCS(const ParkingParams &params) con
 	stopCap.m_polygon.push_back(rr);
 	stopCap.m_polygon.push_back(fr);
 	stopCap.m_polygon.push_back(fl);
-	stopCap.m_preceedingBay = params.capWidth;
+	stopCap.m_precedingBay = params.capWidth;
 
 	return std::vector<Cap>{ startCap, stopCap };
 }
@@ -474,7 +474,7 @@ Cap CParkingLayout::TransformCapToUCS(const CorePt2 &p1, const CorePt2 &p2, cons
 		capUCS.m_polygon.emplace_back(mat * ptOCS);
 		}
 
-	capUCS.m_preceedingBay = capOCS.m_preceedingBay;
+	capUCS.m_precedingBay = capOCS.m_precedingBay;
 	capUCS.m_succeedingBay = capOCS.m_succeedingBay;
 
 	return capUCS;
@@ -549,7 +549,7 @@ std::vector<Cap> CParkingLayout::MakeBendCaps(const std::vector<CorePt2> &path, 
 		cap.m_polygon.push_back(B + bisector);
 		cap.m_polygon.push_back(B + back + backPerp);
 		cap.m_polygon.push_back(B + back);
-		cap.m_preceedingBay = capWidthRear;
+		cap.m_precedingBay = capWidthRear;
 		cap.m_succeedingBay = capWidthRear;
 
 		caps.push_back(cap);

@@ -107,6 +107,9 @@ void DeserializeParams(const std::string &jsonParams, ParkingParams &params)
 	params.shortPaintLength = json["shortPaintLength"].template get<double>();
 	params.capWidth        = json["capWidth"].template get<double>();
 	params.capFrontExt     = json["capFrontExt"].template get<double>();
+	params.laneWidth       = json["laneWidth"].template get<double>();
+	params.oneWayLane      = json["oneWayLane"].template get<bool>();
+	params.animateArrows   = json["animateArrows"].template get<bool>();
 	params.showBays        = json["showBays"].template get<bool>();
 	params.showCaps        = json["showCaps"].template get<bool>();
 	params.showArrows      = json["showArrows"].template get<bool>();

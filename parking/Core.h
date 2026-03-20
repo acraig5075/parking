@@ -54,7 +54,7 @@ public:
 	void LoadIdentity();
 	void MakeTranslate(double dx, double dy);
 	void MakeRotate(double angle);
-	void MultMatrix(C2DMatrix *m2);
+	void MultMatrix(const C2DMatrix &m2);
 	void CompositeRotate(double angle);
 	void MakeRotateAboutPoint(const CorePt2 &o, double angle);
 	void CompositeTranslate(double dx, double dy);

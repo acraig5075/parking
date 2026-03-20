@@ -193,16 +193,16 @@ void C2DMatrix::MakeRotate(double angle)
 	m[1][0] =  sa; m[1][1] =  ca;
 }
 
-void C2DMatrix::MultMatrix(C2DMatrix *m2)
+void C2DMatrix::MultMatrix(const C2DMatrix &m2)
 {
 	double mr[3][3];
 	for (int i = 0; i < 3; i++)
 		{
 		for (int j = 0; j < 3; j++)
 			{
-			mr[i][j] = m[i][0] * m2->m[0][j] +
-			            m[i][1] * m2->m[1][j] +
-			            m[i][2] * m2->m[2][j];
+			mr[i][j] = m[i][0] * m2.m[0][j] +
+			            m[i][1] * m2.m[1][j] +
+			            m[i][2] * m2.m[2][j];
 			}
 		}
 
@@ -215,7 +215,7 @@ void C2DMatrix::CompositeRotate(double angle)
 {
 	C2DMatrix tmp;
 	tmp.MakeRotate(angle);
-	MultMatrix(&tmp);
+	MultMatrix(tmp);
 }
 
 void C2DMatrix::MakeRotateAboutPoint(const CorePt2 &o, double angle)
@@ -229,14 +229,14 @@ void C2DMatrix::CompositeTranslate(double dx, double dy)
 {
 	C2DMatrix tmp;
 	tmp.MakeTranslate(dx, dy);
-	MultMatrix(&tmp);
+	MultMatrix(tmp);
 }
 
 void C2DMatrix::CompositeTranslate(const CoreVector2 &v)
 {
 	C2DMatrix tmp;
 	tmp.MakeTranslate(v.x, v.y);
-	MultMatrix(&tmp);
+	MultMatrix(tmp);
 }
 
 bool IsCounterClockwise(const std::vector<CorePt2> &ring)

@@ -4,138 +4,111 @@
 
 #define UNIT_PRECIS 0.000001
 
-const CorePt3 CorePt3::ZeroPoint3 = CorePt3{};
-const CoreVector3 CoreVector3::ZeroVector = CoreVector3{};
-const CoreVector3 CoreVector3::PlanVector = CoreVector3{ 0.0, 0.0, 1.0 };
-const CoreVector3 CoreVector3::XVector = CoreVector3{ 1.0, 0.0, 0.0 };
-const CoreVector3 CoreVector3::YVector = CoreVector3{ 0.0, 1.0, 0.0 };
+const CorePt2 CorePt2::ZeroPoint2 = CorePt2{};
+const CoreVector2 CoreVector2::ZeroVector = CoreVector2{};
+const CoreVector2 CoreVector2::XVector = CoreVector2{ 1.0, 0.0 };
+const CoreVector2 CoreVector2::YVector = CoreVector2{ 0.0, 1.0 };
 
-CorePt3::CorePt3(double x, double y, double z)
+CorePt2::CorePt2(double x, double y)
 	: x(x)
 	, y(y)
-	, z(z)
 {
 }
 
-double CorePt3::PlanDistanceTo(const CorePt3 &p) const
+double CorePt2::DistanceTo(const CorePt2 &p) const
 {
 	return std::sqrt((p.x - x) * (p.x - x) + (p.y - y) * (p.y - y));
 }
 
-CorePt3 operator-(const CorePt3 &lhs, const CorePt3 &v2)
+CorePt2 operator-(const CorePt2 &lhs, const CorePt2 &rhs)
 {
-	return CorePt3(lhs.x - v2.x, lhs.y - v2.y, lhs.z - v2.z);
+	return CorePt2(lhs.x - rhs.x, lhs.y - rhs.y);
 }
 
-CoreVector3::CoreVector3(double x, double y, double z)
+CoreVector2::CoreVector2(double x, double y)
 	: x(x)
 	, y(y)
-	, z(z)
 {
 }
 
-CoreVector3::CoreVector3(const CorePt3 &pt)
+CoreVector2::CoreVector2(const CorePt2 &pt)
 	: x(pt.x)
 	, y(pt.y)
-	, z(pt.z)
 {
 }
 
-CoreVector3 CoreVector3::operator-() const
+CoreVector2 CoreVector2::operator-() const
 {
-	return CoreVector3(-x, -y, -z);
+	return CoreVector2(-x, -y);
 }
 
-double CoreVector3::Length() const
+double CoreVector2::Length() const
 {
-	return std::sqrt(x * x + y * y + z * z);
+	return std::sqrt(x * x + y * y);
 }
 
-void CoreVector3::Normalise()
+void CoreVector2::Normalise()
 {
 	double len = Length();
 	if (PARMEQ(1.0, len))
 		return;
 
-	if (PARMGTZERO(len))		// prevent div by zero
+	if (PARMGTZERO(len))
 		{
 		len = 1.0 / len;
 		x *= len;
 		y *= len;
-		z *= len;
 		}
 	else
 		{
 		x = 0.0;
 		y = 0.0;
-		z = 0.0;
 		}
 }
 
-double CoreVector3::DotProduct(const CoreVector3 &v) const
+double CoreVector2::DotProduct(const CoreVector2 &v) const
 {
-	return (x * v.x + y * v.y + z * v.z);
+	return (x * v.x + y * v.y);
 }
 
-CoreVector3 CoreVector3::CrossProduct(const CoreVector3 &v) const
-{
-	return CoreVector3((y * v.z) - (z * v.y), (z * v.x) - (x * v.z), (x * v.y) - (y * v.x));
-}
-
-bool CoreVector3::CompareTo(const CoreVector3 &rhs, double tolerance) const
+bool CoreVector2::CompareTo(const CoreVector2 &rhs, double tolerance) const
 {
 	return (abs(x - rhs.x) < tolerance &&
-					abs(y - rhs.y) < tolerance &&
-					abs(z - rhs.z) < tolerance);
+	        abs(y - rhs.y) < tolerance);
 }
 
-double CoreVector3::AngleBetween360(CoreVector3 normal, const CoreVector3 &v) const
+double CoreVector2::AngleBetween360(const CoreVector2 &v) const
 {
-	if (v == CoreVector3::ZeroVector || normal == CoreVector3::ZeroVector)
+	if (v == CoreVector2::ZeroVector)
 		return 0.0;
 
-	normal.Normalise();
-
-	// check for same direction and opposite direction vectors
-	// NB: Important because AngleBetween() will choke if they are very near parallel.
-	CoreVector3 a(x, y, z);
+	CoreVector2 a(x, y);
 	a.Normalise();
-	CoreVector3 b = v;
+	CoreVector2 b = v;
 	b.Normalise();
 
-	// JH 12/6/2009 - Replaced == with CompareTo() (== uses PARMEQ() which is too finicky for unit vectors)
-	//if (a == b)
-	//	return 0.0;
-	//else if (a == (b * -1.0))
-	//	return PI;
-	if (a.CompareTo(b, UNIT_PRECIS))					// 6 decimals is good for unit vectors
+	if (a.CompareTo(b, UNIT_PRECIS))
 		return 0.0;
 	if (a.CompareTo(-b, UNIT_PRECIS))
 		return PI;
 
 	double theta = AngleBetween(v);
 
-	CoreVector3 check = CrossProduct(v);
-	check.Normalise();
-	//if (!normal.CompareTo(check))
-	//	return RADIAN360 - theta;
-
-	// JH 21/01/2008 - use new CompareTo() to avoid floating-point bug, which prevents old CompareTo() from working
-	if (!normal.CompareTo(check, UNIT_PRECIS))					// 6 decimals is fine because we are dealing with unit vectors here
+	// 2D scalar cross product: negative means v is clockwise from this
+	double cross = x * v.y - y * v.x;
+	if (cross < 0.0)
 		return RADIAN360 - theta;
 
 	return theta;
 }
 
-double CoreVector3::AngleBetween(const CoreVector3 &v) const
+double CoreVector2::AngleBetween(const CoreVector2 &v) const
 {
 	double a = DotProduct(v);
 	double b = Length() * v.Length();
-	// [6415] - Check for division by zero
 	if (PARMZERO(b))
 		return 0.0;
 	double ratio = a / b;
-	// [6415] - Check ratio range: [-1..1]
 	if (ratio > 1)
 		return 0.0;
 	if (ratio < -1)
@@ -144,7 +117,7 @@ double CoreVector3::AngleBetween(const CoreVector3 &v) const
 	return acos(ratio);
 }
 
-void CoreVector3::SetLength(double length)
+void CoreVector2::SetLength(double length)
 {
 	double thisLen = Length();
 	if (PARMEQ(length, thisLen))
@@ -155,18 +128,15 @@ void CoreVector3::SetLength(double length)
 		double scalar = length / thisLen;
 		x *= scalar;
 		y *= scalar;
-		z *= scalar;
 		}
 	else
 		{
 		x = 0.0;
 		y = 0.0;
-		z = 0.0;
 		}
 }
 
-// CCW rotation
-void CoreVector3::RotateBy(double angle)
+void CoreVector2::RotateBy(double angle)
 {
 	const double costheta = cos(angle);
 	const double sintheta = sin(angle);
@@ -178,143 +148,111 @@ void CoreVector3::RotateBy(double angle)
 	y = ya;
 }
 
-bool operator==(const CoreVector3 &lhs, const CoreVector3 &v)
+bool operator==(const CoreVector2 &lhs, const CoreVector2 &rhs)
 {
-	return (PARMEQ(lhs.x, v.x) && PARMEQ(lhs.y, v.y) && PARMEQ(lhs.z, v.z));
+	return (PARMEQ(lhs.x, rhs.x) && PARMEQ(lhs.y, rhs.y));
 }
 
-CorePt3 operator+(const CorePt3 &lhs, const CoreVector3 &v)
+CorePt2 operator+(const CorePt2 &lhs, const CoreVector2 &v)
 {
-	return CorePt3(lhs.x + v.x, lhs.y + v.y, lhs.z + v.z);
+	return CorePt2(lhs.x + v.x, lhs.y + v.y);
 }
 
-CorePt3 operator-(const CorePt3 &lhs, const CoreVector3 &v)
+CorePt2 operator-(const CorePt2 &lhs, const CoreVector2 &v)
 {
-	return CorePt3(lhs.x - v.x, lhs.y - v.y, lhs.z - v.z);
+	return CorePt2(lhs.x - v.x, lhs.y - v.y);
 }
 
-CorePt3 C3DMatrix::operator*(const CorePt3 &p) const
+CorePt2 C2DMatrix::operator*(const CorePt2 &p) const
 {
-	double x = m[0][0] * p.x + m[0][1] * p.y + m[0][2] * p.z + m[0][3];
-	double y = m[1][0] * p.x + m[1][1] * p.y + m[1][2] * p.z + m[1][3];
-	double z = m[2][0] * p.x + m[2][1] * p.y + m[2][2] * p.z + m[2][3];
-	return CorePt3(x, y, z);
+	double x = m[0][0] * p.x + m[0][1] * p.y + m[0][2];
+	double y = m[1][0] * p.x + m[1][1] * p.y + m[1][2];
+	return CorePt2(x, y);
 }
 
-void C3DMatrix::LoadIdentity()
+void C2DMatrix::LoadIdentity()
 {
-	m[0][0] = 1.0;
-	m[0][1] = 0.0;
-	m[0][2] = 0.0;
-	m[0][3] = 0.0;
-	m[1][0] = 0.0;
-	m[1][1] = 1.0;
-	m[1][2] = 0.0;
-	m[1][3] = 0.0;
-	m[2][0] = 0.0;
-	m[2][1] = 0.0;
-	m[2][2] = 1.0;
-	m[2][3] = 0.0;
-	m[3][0] = 0.0;
-	m[3][1] = 0.0;
-	m[3][2] = 0.0;
-	m[3][3] = 1.0;
+	m[0][0] = 1.0; m[0][1] = 0.0; m[0][2] = 0.0;
+	m[1][0] = 0.0; m[1][1] = 1.0; m[1][2] = 0.0;
+	m[2][0] = 0.0; m[2][1] = 0.0; m[2][2] = 1.0;
 }
 
-void C3DMatrix::MakeTranslate(double dx, double dy, double dz)
-{
-	// column 3 has x, y, z offsets
-	LoadIdentity();
-	m[0][3] = dx;
-	m[1][3] = dy;
-	m[2][3] = dz;
-}
-
-void C3DMatrix::MakeRotateArbitraryAxis(const CoreVector3 &axis, double angle)
+void C2DMatrix::MakeTranslate(double dx, double dy)
 {
 	LoadIdentity();
-	const double sa = sin(angle);
+	m[0][2] = dx;
+	m[1][2] = dy;
+}
+
+void C2DMatrix::MakeRotate(double angle)
+{
+	LoadIdentity();
 	const double ca = cos(angle);
-	m[0][0] = ca + ((1 - ca) * axis.x * axis.x);
-	m[0][1] = ((1 - ca) * axis.x * axis.y) - (sa * axis.z);
-	m[0][2] = ((1 - ca) * axis.x * axis.z) + (sa * axis.y);
-
-	m[1][0] = ((1 - ca) * axis.x * axis.y) + (sa * axis.z);
-	m[1][1] = ca + ((1 - ca) * axis.y * axis.y);
-	m[1][2] = ((1 - ca) * axis.y * axis.z) - (sa * axis.x);
-
-	m[2][0] = ((1 - ca) * axis.x * axis.z) - (sa * axis.y);
-	m[2][1] = ((1 - ca) * axis.y * axis.z) + (sa * axis.x);
-	m[2][2] = ca + ((1 - ca) * axis.z * axis.z);
+	const double sa = sin(angle);
+	m[0][0] =  ca; m[0][1] = -sa;
+	m[1][0] =  sa; m[1][1] =  ca;
 }
 
-void C3DMatrix::MultMatrix(C3DMatrix *m2)
+void C2DMatrix::MultMatrix(C2DMatrix *m2)
 {
-	double mr[4][4];
-	for (int i = 0; i < 4; i++)			// each row //-V112
+	double mr[3][3];
+	for (int i = 0; i < 3; i++)
 		{
-		for (int j = 0; j < 4; j++)		// each column //-V112
+		for (int j = 0; j < 3; j++)
 			{
 			mr[i][j] = m[i][0] * m2->m[0][j] +
-								 m[i][1] * m2->m[1][j] +
-								 m[i][2] * m2->m[2][j] +
-								 m[i][3] * m2->m[3][j];
+			            m[i][1] * m2->m[1][j] +
+			            m[i][2] * m2->m[2][j];
 			}
 		}
 
-	// copy result back to this matrix
-	for (int i = 0; i < 4; i++)			// each row //-V112
-		{
-		for (int j = 0; j < 4; j++)		// each column //-V112
+	for (int i = 0; i < 3; i++)
+		for (int j = 0; j < 3; j++)
 			m[i][j] = mr[i][j];
-		}
 }
 
-
-void C3DMatrix::CompositeRotateArbitraryAxis(const CoreVector3 &axis, double angle)
+void C2DMatrix::CompositeRotate(double angle)
 {
-	C3DMatrix tmp;
-	tmp.MakeRotateArbitraryAxis(axis, angle);
+	C2DMatrix tmp;
+	tmp.MakeRotate(angle);
 	MultMatrix(&tmp);
 }
 
-void C3DMatrix::MakeRotateVectorPoint(const CorePt3 &o, const CoreVector3 &v, double angle)
+void C2DMatrix::MakeRotateAboutPoint(const CorePt2 &o, double angle)
 {
-	MakeTranslate(o.x, o.y, o.z);
-	CompositeRotateArbitraryAxis(v, angle);
-	CompositeTranslate(-o.x, -o.y, -o.z);
+	MakeTranslate(o.x, o.y);
+	CompositeRotate(angle);
+	CompositeTranslate(-o.x, -o.y);
 }
 
-void C3DMatrix::CompositeTranslate(double dx, double dy, double dz)
+void C2DMatrix::CompositeTranslate(double dx, double dy)
 {
-	C3DMatrix tmp;
-	tmp.MakeTranslate(dx, dy, dz);
+	C2DMatrix tmp;
+	tmp.MakeTranslate(dx, dy);
 	MultMatrix(&tmp);
 }
 
-void C3DMatrix::CompositeTranslate(const CoreVector3 &v)
+void C2DMatrix::CompositeTranslate(const CoreVector2 &v)
 {
-	C3DMatrix tmp;
-	tmp.MakeTranslate(v.x, v.y, v.z);
+	C2DMatrix tmp;
+	tmp.MakeTranslate(v.x, v.y);
 	MultMatrix(&tmp);
 }
 
-bool IsCounterClockwise(const std::vector<CorePt3> &ring)
+bool IsCounterClockwise(const std::vector<CorePt2> &ring)
 {
 	if (ring.size() < 3)
 		return false;
 
 	double signedArea = 0.0;
 
-	// Iterate over edges
 	for (size_t i = 0; i < ring.size(); ++i)
 		{
-		const CorePt3 &p1 = ring[i];
-		const CorePt3 &p2 = ring[(i + 1) % ring.size()];
+		const CorePt2 &p1 = ring[i];
+		const CorePt2 &p2 = ring[(i + 1) % ring.size()];
 
 		signedArea += (p1.x * p2.y) - (p2.x * p1.y);
 		}
 
-	// Positive area => CCW, Negative => CW
 	return signedArea > 0.0;
 }

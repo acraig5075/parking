@@ -14,7 +14,7 @@ ParkingParams::ParkingParams(double length, double width, double angle)
 
 /// ParkingBay class
 
-ParkingBay::ParkingBay(const CorePt3 &a, const CorePt3 &b, const CorePt3 &c, const CorePt3 &d)
+ParkingBay::ParkingBay(const CorePt2 &a, const CorePt2 &b, const CorePt2 &c, const CorePt2 &d)
 {
 	m_corners[0] = a;
 	m_corners[1] = b;
@@ -22,7 +22,7 @@ ParkingBay::ParkingBay(const CorePt3 &a, const CorePt3 &b, const CorePt3 &c, con
 	m_corners[3] = d;
 }
 
-PaintLine::PaintLine(const CorePt3 &start, const CorePt3 &end)
+PaintLine::PaintLine(const CorePt2 &start, const CorePt2 &end)
 	: start(start)
 	, end(end)
 {
@@ -38,10 +38,10 @@ void CParkingLayout::Make(const std::string &wktGeometry, const ParkingParams &p
 	// Polygons
 	for (const auto &pg : parser.m_polygons)
 		{
-		std::vector<CorePt3> polyPath;
+		std::vector<CorePt2> polyPath;
 		for (const auto pt : pg.rings[0])
 			{
-			polyPath.emplace_back(pt.x, pt.y, 0.0);
+			polyPath.emplace_back(pt.x, pt.y);
 			}
 
 		if (bool ccw = IsCounterClockwise(polyPath); (ccw && params.LHS == params.driveDirection) || (!ccw && params.RHS == params.driveDirection))
@@ -53,17 +53,17 @@ void CParkingLayout::Make(const std::string &wktGeometry, const ParkingParams &p
 	// Linestrings
 	for (const auto &ls : parser.m_linestrings)
 		{
-		std::vector<CorePt3> linePath;
+		std::vector<CorePt2> linePath;
 		for (const auto pt : ls.WKTPoints)
 			{
-			linePath.emplace_back(pt.x, pt.y, 0.0);
+			linePath.emplace_back(pt.x, pt.y);
 			}
 
 		Make(linePath, params);
 		}
 }
 
-void CParkingLayout::Make(const std::vector<CorePt3> &path, const ParkingParams &params)
+void CParkingLayout::Make(const std::vector<CorePt2> &path, const ParkingParams &params)
 {
 	size_t nRows = path.size();
 	if (nRows < 2)
@@ -71,7 +71,7 @@ void CParkingLayout::Make(const std::vector<CorePt3> &path, const ParkingParams 
 
 	size_t j = m_capsUCS.size();
 
-	bool isPolygon = GPARMZERO(path[0].PlanDistanceTo(path[path.size() - 1])); 
+	bool isPolygon = GPARMZERO(path[0].DistanceTo(path[path.size() - 1])); 
 
 	if (isPolygon)
 		{
@@ -97,7 +97,7 @@ void CParkingLayout::Make(const std::vector<CorePt3> &path, const ParkingParams 
 
 	for (size_t i = 1; i < path.size(); ++i)
 		{
-		double span = path[i - 1].PlanDistanceTo(path[i]);
+		double span = path[i - 1].DistanceTo(path[i]);
 		size_t startCap = j + i - 1;
 		size_t stopCap = isPolygon && i == path.size() - 1 ? j : j + i;
 		double start = m_capsUCS[startCap].m_succeedingBay;
@@ -161,10 +161,10 @@ std::vector<ParkingBay> CParkingLayout::MakeBaysOCS(double totalSpan, double sta
 
 	if (PARMGTZERO(singleSpan))
 		{
-		CorePt3 fl; // front left corner
-		CorePt3 fr; // front right corner
-		CorePt3 rr; // rear right corner
-		CorePt3 rl; // rear left corner
+		CorePt2 fl; // front left corner
+		CorePt2 fr; // front right corner
+		CorePt2 rr; // rear right corner
+		CorePt2 rl; // rear left corner
 
 		for (int i = 0;; ++i)
 			{
@@ -210,7 +210,7 @@ std::vector<ParkingBay> CParkingLayout::MakeBaysOCS(double totalSpan, double sta
 			}
 		else if (ParkingParams::SHORT == params.sideLines)
 			{
-			auto side = CoreVector3{ fl - rl };
+			auto side = CoreVector2{ fl - rl };
 			side.SetLength(params.shortPaintLength);
 			bay.m_lines.emplace_back(fl, fl - side);
 			bay.m_lines.emplace_back(fr, fr - side);
@@ -224,7 +224,7 @@ std::vector<ParkingBay> CParkingLayout::MakeBaysOCS(double totalSpan, double sta
 			}
 		else if (ParkingParams::SHORT == params.frontLine)
 			{
-			auto side = CoreVector3{ fr - fl };
+			auto side = CoreVector2{ fr - fl };
 			side.SetLength(params.shortPaintLength);
 			bay.m_lines.emplace_back(fl, fl + side);
 			bay.m_lines.emplace_back(fr, fr - side);
@@ -236,7 +236,7 @@ std::vector<ParkingBay> CParkingLayout::MakeBaysOCS(double totalSpan, double sta
 			}
 		else if (ParkingParams::SHORT == params.rearLine)
 			{
-			auto side = CoreVector3{ rr - rl };
+			auto side = CoreVector2{ rr - rl };
 			side.SetLength(params.shortPaintLength);
 			bay.m_lines.emplace_back(rl, rl + side);
 			bay.m_lines.emplace_back(rr, rr - side);
@@ -249,9 +249,9 @@ std::vector<ParkingBay> CParkingLayout::MakeBaysOCS(double totalSpan, double sta
 /// Transformation of OCS parking bay layout to the User Coordinate System, involves rotation and translation
 /// @note
 /// After this function completes the UCS parking bays are in m_baysUCS.
-std::vector<ParkingBay> CParkingLayout::TransformBaysToUCS(const CorePt3 &p1, const CorePt3 &p2, const std::vector<ParkingBay> &baysOCS) const
+std::vector<ParkingBay> CParkingLayout::TransformBaysToUCS(const CorePt2 &p1, const CorePt2 &p2, const std::vector<ParkingBay> &baysOCS) const
 {
-	C3DMatrix mat = MakeTranslateAndRotate(p1, p2);
+	C2DMatrix mat = MakeTranslateAndRotate(p1, p2);
 
 	std::vector<ParkingBay> baysUCS;
 
@@ -259,7 +259,7 @@ std::vector<ParkingBay> CParkingLayout::TransformBaysToUCS(const CorePt3 &p1, co
 		{
 		ParkingBay bayUCS;
 
-		std::transform(bayOCS.m_corners.begin(), bayOCS.m_corners.end(), bayUCS.m_corners.begin(), [&mat](const CorePt3 & cnr)
+		std::transform(bayOCS.m_corners.begin(), bayOCS.m_corners.end(), bayUCS.m_corners.begin(), [&mat](const CorePt2 & cnr)
 			{
 			return mat * cnr;
 			});
@@ -279,23 +279,23 @@ std::vector<ParkingBay> CParkingLayout::TransformBaysToUCS(const CorePt3 &p1, co
 }
 
 /// Build the transformation matrix to transform OCS coordinates to UCS
-C3DMatrix CParkingLayout::MakeTranslateAndRotate(const CorePt3 &p1, const CorePt3 &p2) const
+C2DMatrix CParkingLayout::MakeTranslateAndRotate(const CorePt2 &p1, const CorePt2 &p2) const
 {
-	CoreVector3 rotation{ p2 - p1 };
-	CoreVector3 translate1{ p1 - CorePt3::ZeroPoint3 };
-	CoreVector3 translate2 = GetBaselineTranslation();
-	double angle = CoreVector3::XVector.AngleBetween360(CoreVector3::PlanVector, rotation);
+	CoreVector2 rotation{ p2 - p1 };
+	CoreVector2 translate1{ p1 - CorePt2::ZeroPoint2 };
+	CoreVector2 translate2 = GetBaselineTranslation();
+	double angle = CoreVector2::XVector.AngleBetween360(rotation);
 
-	C3DMatrix transform;
-	transform.MakeRotateVectorPoint(p1, CoreVector3::PlanVector, angle); // rotation
-	transform.CompositeTranslate(translate1); // translation from origin
-	transform.CompositeTranslate(translate2); // translation from parking bay baseline (front/rear)
+	C2DMatrix transform;
+	transform.MakeRotateAboutPoint(p1, angle);
+	transform.CompositeTranslate(translate1);
+	transform.CompositeTranslate(translate2);
 	return transform;
 }
 
-CoreVector3 CParkingLayout::GetBaselineTranslation() const
+CoreVector2 CParkingLayout::GetBaselineTranslation() const
 {
-	return CoreVector3::ZeroVector;
+	return CoreVector2::ZeroVector;
 }
 
 CImageData CParkingLayout::GetImageData(const ParkingParams &params) const
@@ -427,10 +427,10 @@ CImageData CParkingLayout::GetImageData(const ParkingParams &params) const
 
 std::vector<Cap> CParkingLayout::MakeEndCapsOCS(const ParkingParams &params) const
 {
-	CorePt3 fl; // front left corner
-	CorePt3 fr; // front right corner
-	CorePt3 rr; // rear right corner
-	CorePt3 rl; // rear left corner
+	CorePt2 fl; // front left corner
+	CorePt2 fr; // front right corner
+	CorePt2 rr; // rear right corner
+	CorePt2 rl; // rear left corner
 
 	fr.x = rr.x = params.capWidth;
 
@@ -463,9 +463,9 @@ std::vector<Cap> CParkingLayout::MakeEndCapsOCS(const ParkingParams &params) con
 	return std::vector<Cap>{ startCap, stopCap };
 }
 
-Cap CParkingLayout::TransformCapToUCS(const CorePt3 &p1, const CorePt3 &p2, const Cap &capOCS) const
+Cap CParkingLayout::TransformCapToUCS(const CorePt2 &p1, const CorePt2 &p2, const Cap &capOCS) const
 	{
-	C3DMatrix mat = MakeTranslateAndRotate(p1, p2);
+	C2DMatrix mat = MakeTranslateAndRotate(p1, p2);
 
 	Cap capUCS;
 
@@ -480,7 +480,7 @@ Cap CParkingLayout::TransformCapToUCS(const CorePt3 &p1, const CorePt3 &p2, cons
 	return capUCS;
 	}
 
-static double GetAngleAtB(const CorePt3 &A, const CorePt3 &B, const CorePt3 &C, bool LHS)
+static double GetAngleAtB(const CorePt2 &A, const CorePt2 &B, const CorePt2 &C, bool LHS)
 {
 	// Create vectors BA and BC for angle calculation
 	double BA_x = A.x - B.x;
@@ -512,11 +512,11 @@ static double GetAngleAtB(const CorePt3 &A, const CorePt3 &B, const CorePt3 &C, 
 		}
 }
 
-std::vector<Cap> CParkingLayout::MakeBendCaps(const std::vector<CorePt3> &path, const ParkingParams &params) const
+std::vector<Cap> CParkingLayout::MakeBendCaps(const std::vector<CorePt2> &path, const ParkingParams &params) const
 {
 	std::vector<Cap> caps;
 
-	auto BendPoint = [params, &caps](const CorePt3 &A, const CorePt3 &B, const CorePt3 &C)
+	auto BendPoint = [params, &caps](const CorePt2 &A, const CorePt2 &B, const CorePt2 &C)
 		{
 		bool baysOnBendLeft = params.RHS == params.driveDirection;
 		double bendAngle = GetAngleAtB(A, B, C, baysOnBendLeft);
@@ -527,11 +527,11 @@ std::vector<Cap> CParkingLayout::MakeBendCaps(const std::vector<CorePt3> &path, 
 		double span = std::abs(perpCapLength / tan(bisectAngle));
 		double capWidthRear = PARMLT(bendAngle, PI) ? span + params.capFrontExt : params.capFrontExt;
 
-		CoreVector3 forw{ C - B };
-		CoreVector3 back{ A - B };
-		CoreVector3 forwPerp = forw;
-		CoreVector3 backPerp = back;
-		CoreVector3 bisector = forw;
+		CoreVector2 forw{ C - B };
+		CoreVector2 back{ A - B };
+		CoreVector2 forwPerp = forw;
+		CoreVector2 backPerp = back;
+		CoreVector2 bisector = forw;
 		forwPerp.RotateBy(baysOnBendLeft ? RADIAN90 : -RADIAN90);
 		backPerp.RotateBy(baysOnBendLeft ? -RADIAN90 : RADIAN90);
 		bisector.RotateBy(baysOnBendLeft ? bisectAngle : -bisectAngle);
@@ -555,7 +555,7 @@ std::vector<Cap> CParkingLayout::MakeBendCaps(const std::vector<CorePt3> &path, 
 		caps.push_back(cap);
 		};
 
-	if (bool isPolygon = GPARMZERO(path[0].PlanDistanceTo(path[path.size() - 1])); isPolygon)
+	if (bool isPolygon = GPARMZERO(path[0].DistanceTo(path[path.size() - 1])); isPolygon)
 		{
 		BendPoint(path[path.size() - 2], path[0], path[1]);
 		}
@@ -568,33 +568,33 @@ std::vector<Cap> CParkingLayout::MakeBendCaps(const std::vector<CorePt3> &path, 
 	return caps;
 }
 
-Arrow CParkingLayout::MakeArrow(const CorePt3 &start, const CorePt3 &stop, const ParkingParams &params) const
+Arrow CParkingLayout::MakeArrow(const CorePt2 &start, const CorePt2 &stop, const ParkingParams &params) const
 {
-	CoreVector3 laneDir { stop - start };
-	CoreVector3 perpDir = laneDir;
+	CoreVector2 laneDir { stop - start };
+	CoreVector2 perpDir = laneDir;
 	laneDir.SetLength(0.5 * laneDir.Length());
 	perpDir.RotateBy(ParkingParams::LHS == params.driveDirection ? -RADIAN90 : RADIAN90);
 	perpDir.SetLength(GetBayDepth(params) + params.laneWidth * (params.oneWayLane ? 0.5 : 0.25));
 
-	CorePt3 pt = start + laneDir + perpDir;
-	CorePt3 scale{ 0.1, 0.25, 0 };
+	CorePt2 pt = start + laneDir + perpDir;
+	CorePt2 scale{ 0.1, 0.25 };
 
 	// OCS arrow pointing downwards
 	Arrow arrow;
-	arrow.m_polygon.emplace_back(pt.x, pt.y, 0.0);
-	arrow.m_polygon.emplace_back(pt.x + 8 * scale.x, pt.y + 8 * scale.y, 0.0);
-	arrow.m_polygon.emplace_back(pt.x + 3 * scale.x, pt.y + 8 * scale.y, 0.0);
-	arrow.m_polygon.emplace_back(pt.x + 3 * scale.x, pt.y + 16 * scale.y, 0.0);
-	arrow.m_polygon.emplace_back(pt.x - 3 * scale.x, pt.y + 16 * scale.y, 0.0);
-	arrow.m_polygon.emplace_back(pt.x - 3 * scale.x, pt.y + 8 * scale.y, 0.0);
-	arrow.m_polygon.emplace_back(pt.x - 8 * scale.x, pt.y + 8 * scale.y, 0.0);
-	arrow.m_polygon.emplace_back(pt.x, pt.y, 0.0);
+	arrow.m_polygon.emplace_back(pt.x, pt.y);
+	arrow.m_polygon.emplace_back(pt.x + 8 * scale.x, pt.y + 8 * scale.y);
+	arrow.m_polygon.emplace_back(pt.x + 3 * scale.x, pt.y + 8 * scale.y);
+	arrow.m_polygon.emplace_back(pt.x + 3 * scale.x, pt.y + 16 * scale.y);
+	arrow.m_polygon.emplace_back(pt.x - 3 * scale.x, pt.y + 16 * scale.y);
+	arrow.m_polygon.emplace_back(pt.x - 3 * scale.x, pt.y + 8 * scale.y);
+	arrow.m_polygon.emplace_back(pt.x - 8 * scale.x, pt.y + 8 * scale.y);
+	arrow.m_polygon.emplace_back(pt.x, pt.y);
 
-	double angle = CoreVector3::XVector.AngleBetween360(CoreVector3::PlanVector, laneDir);
+	double angle = CoreVector2::XVector.AngleBetween360(laneDir);
 	angle += RADIAN90;
 
-	C3DMatrix mat;
-	mat.MakeRotateVectorPoint(pt, CoreVector3::PlanVector, angle);
+	C2DMatrix mat;
+	mat.MakeRotateAboutPoint(pt, angle);
 
 	// Transform arrow to UCS
 	for (auto &point : arrow.m_polygon)

@@ -39,16 +39,16 @@ struct ParkingParams
 struct PaintLine
 {
 	PaintLine() = default;
-	PaintLine(const CorePt3 &start, const CorePt3 &end);
+	PaintLine(const CorePt2 &start, const CorePt2 &end);
 
-	CorePt3 start;
-	CorePt3 end;
+	CorePt2 start;
+	CorePt2 end;
 };
 
 class Cap
 {
 public:
-	std::vector<CorePt3> m_polygon;
+	std::vector<CorePt2> m_polygon;
 	double m_preceedingBay = 0.0;
 	double m_succeedingBay = 0.0;
 };
@@ -56,8 +56,8 @@ public:
 class Arrow
 {
 public:
-	std::vector<CorePt3> m_polygon;
-	std::array<CorePt3, 2> m_movement;
+	std::vector<CorePt2> m_polygon;
+	std::array<CorePt2, 2> m_movement;
 };
 
 class ParkingBay
@@ -66,17 +66,17 @@ public:
 	enum CORNERS { SIDE1_FRONT = 0, SIDE2_FRONT, SIDE2_REAR, SIDE1_REAR };
 
 	ParkingBay() = default;
-	ParkingBay(const CorePt3 &a, const CorePt3 &b, const CorePt3 &c, const CorePt3 &d);
+	ParkingBay(const CorePt2 &a, const CorePt2 &b, const CorePt2 &c, const CorePt2 &d);
 
-	std::array<CorePt3, 4> m_corners;
+	std::array<CorePt2, 4> m_corners;
 	std::vector<PaintLine> m_lines;
 };
 
 class ParkingRow
 {
 public:
-	CorePt3 m_start;
-	CorePt3 m_end;
+	CorePt2 m_start;
+	CorePt2 m_end;
 	std::vector<ParkingBay> m_baysUCS;
 	std::optional<size_t> m_startCap;
 	std::optional<size_t> m_endCap;
@@ -121,19 +121,19 @@ public:
 	CImageData GetImageData(const ParkingParams &params) const;
 
 private:
-	void Make(const std::vector<CorePt3> &path, const ParkingParams &params);
+	void Make(const std::vector<CorePt2> &path, const ParkingParams &params);
 
 	std::vector<ParkingBay> MakeBaysOCS(double span, double startOff, double stopOff, const ParkingParams &params) const;
-	std::vector<ParkingBay> TransformBaysToUCS(const CorePt3 &p1, const CorePt3 &p2, const std::vector<ParkingBay> &baysOCS) const;
+	std::vector<ParkingBay> TransformBaysToUCS(const CorePt2 &p1, const CorePt2 &p2, const std::vector<ParkingBay> &baysOCS) const;
 
 	std::vector<Cap> MakeEndCapsOCS(const ParkingParams &params) const;
-	Cap TransformCapToUCS(const CorePt3 &p1, const CorePt3 &p2, const Cap &capOCS) const;
+	Cap TransformCapToUCS(const CorePt2 &p1, const CorePt2 &p2, const Cap &capOCS) const;
 
-	std::vector<Cap> MakeBendCaps(const std::vector<CorePt3> &path, const ParkingParams &params) const;
-	Arrow MakeArrow(const CorePt3 &start, const CorePt3 &stop, const ParkingParams &params) const;
+	std::vector<Cap> MakeBendCaps(const std::vector<CorePt2> &path, const ParkingParams &params) const;
+	Arrow MakeArrow(const CorePt2 &start, const CorePt2 &stop, const ParkingParams &params) const;
 
-	C3DMatrix MakeTranslateAndRotate(const CorePt3 &p1, const CorePt3 &p2) const;
-	CoreVector3 GetBaselineTranslation() const;
+	C2DMatrix MakeTranslateAndRotate(const CorePt2 &p1, const CorePt2 &p2) const;
+	CoreVector2 GetBaselineTranslation() const;
 
 private:
 	std::vector<ParkingRow> m_rowsUCS;

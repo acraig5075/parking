@@ -1,5 +1,6 @@
 add_library(parking STATIC
     Core.cpp
+    ParallelLines.cpp
     ParkingImage.cpp
     ParkingLayout.cpp
     WKTParser.cpp

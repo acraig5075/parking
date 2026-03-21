@@ -371,3 +371,6 @@ mfc/Include/BCGPro/
 /parking/ParkingImage - second.cpp
 /mfc/parking.svg
 /mfc/parking.json
+
+# CMake build directory
+build/

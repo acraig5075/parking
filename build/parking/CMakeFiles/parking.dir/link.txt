@@ -1,2 +1,0 @@
-/usr/bin/ar qc libparking.a CMakeFiles/parking.dir/Core.cpp.o CMakeFiles/parking.dir/ParkingImage.cpp.o CMakeFiles/parking.dir/ParkingLayout.cpp.o CMakeFiles/parking.dir/WKTParser.cpp.o CMakeFiles/parking.dir/pch.cpp.o
-/usr/bin/ranlib libparking.a

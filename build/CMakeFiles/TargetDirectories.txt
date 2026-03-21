@@ -1,8 +1,0 @@
-/home/runner/work/parking/parking/build/CMakeFiles/edit_cache.dir
-/home/runner/work/parking/parking/build/CMakeFiles/rebuild_cache.dir
-/home/runner/work/parking/parking/build/parking/CMakeFiles/parking.dir
-/home/runner/work/parking/parking/build/parking/CMakeFiles/edit_cache.dir
-/home/runner/work/parking/parking/build/parking/CMakeFiles/rebuild_cache.dir
-/home/runner/work/parking/parking/build/console/CMakeFiles/console.dir
-/home/runner/work/parking/parking/build/console/CMakeFiles/edit_cache.dir
-/home/runner/work/parking/parking/build/console/CMakeFiles/rebuild_cache.dir

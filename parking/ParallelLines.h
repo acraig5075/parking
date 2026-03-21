@@ -22,6 +22,6 @@ struct LineSegment
 /// @return                 Line segments whose endpoints lie on the inset polygon boundary.
 std::vector<LineSegment> CalculateParallelLineTerminals(
 	const std::vector<CorePt2> &polygon,
-	int edgeIndex,
+	size_t edgeIndex,
 	double offsetDistance,
 	double clippingDistance);

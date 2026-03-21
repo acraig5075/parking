@@ -32,10 +32,10 @@ static std::vector<CorePt2> ComputeInsetPolygon(
 
 	// Build one offset line (origin + direction) per edge
 	struct OffsetLine
-	{
+		{
 		CorePt2 origin;
 		CoreVector2 dir;
-	};
+		};
 
 	std::vector<OffsetLine> offsetLines(n);
 	for (size_t i = 0; i < n; ++i)
@@ -50,7 +50,7 @@ static std::vector<CorePt2> ComputeInsetPolygon(
 		CoreVector2 normal{ -sign * e.y, sign * e.x };
 
 		offsetLines[i].origin = CorePt2(p0.x + insetDist * normal.x,
-		                                p0.y + insetDist * normal.y);
+																		p0.y + insetDist * normal.y);
 		offsetLines[i].dir = e;
 		}
 
@@ -74,7 +74,7 @@ static std::vector<CorePt2> ComputeInsetPolygon(
 			double dy = curr.origin.y - prev.origin.y;
 			double t = (dx * curr.dir.y - dy * curr.dir.x) / denom;
 			result[i] = CorePt2(prev.origin.x + t * prev.dir.x,
-			                    prev.origin.y + t * prev.dir.y);
+													prev.origin.y + t * prev.dir.y);
 			}
 		}
 
@@ -123,10 +123,10 @@ static std::vector<double> LinePolygonIntersections(
 	// shared by two adjacent edges (each would contribute the same t value)
 	tValues.erase(
 		std::unique(tValues.begin(), tValues.end(), [](double a, double b)
-			{
-			return std::abs(b - a) <= G_EPSILON;
-			}),
-		tValues.end());
+		{
+		return std::abs(b - a) <= G_EPSILON;
+		}),
+	tValues.end());
 
 	return tValues;
 }
@@ -135,14 +135,14 @@ static std::vector<double> LinePolygonIntersections(
 /// See header for full documentation.
 std::vector<LineSegment> CalculateParallelLineTerminals(
 	const std::vector<CorePt2> &polygon,
-	int edgeIndex,
+	size_t edgeIndex,
 	double offsetDistance,
 	double clippingDistance)
 {
 	std::vector<LineSegment> result;
 
-	const int nVertices = static_cast<int>(polygon.size()) - 1;
-	if (nVertices < 3 || edgeIndex < 0 || edgeIndex >= nVertices)
+	const size_t nVertices = polygon.size() - 1;
+	if (nVertices < 3 || edgeIndex >= nVertices)
 		return result;
 
 	if (PARMLEZERO(offsetDistance) || PARMLEZERO(clippingDistance))
@@ -183,7 +183,7 @@ std::vector<LineSegment> CalculateParallelLineTerminals(
 	for (const CorePt2 &pt : insetPoly)
 		{
 		double proj = (pt.x - edgeStart.x) * perpDir.x +
-		              (pt.y - edgeStart.y) * perpDir.y;
+									(pt.y - edgeStart.y) * perpDir.y;
 		if (proj > maxProj)
 			maxProj = proj;
 		}
@@ -192,24 +192,27 @@ std::vector<LineSegment> CalculateParallelLineTerminals(
 	// stepping inward, and clip each against the inset polygon
 	for (int n = 1; n * offsetDistance <= maxProj + G_EPSILON; ++n)
 		{
-		CorePt2 linePoint{
-			edgeStart.x + n * offsetDistance * perpDir.x,
-			edgeStart.y + n * offsetDistance * perpDir.y
-		};
+		CorePt2 linePoint
+			{
+			edgeStart.x + n *offsetDistance * perpDir.x,
+			edgeStart.y + n *offsetDistance *perpDir.y
+			};
 
 		std::vector<double> tVals = LinePolygonIntersections(linePoint, edgeDir, insetPoly);
 
 		// Pair up sorted intersection t-values to form line segments
 		for (size_t i = 0; i + 1 < tVals.size(); i += 2)
 			{
-			CorePt2 segStart{
-				linePoint.x + tVals[i]     * edgeDir.x,
-				linePoint.y + tVals[i]     * edgeDir.y
-			};
-			CorePt2 segEnd{
-				linePoint.x + tVals[i + 1] * edgeDir.x,
-				linePoint.y + tVals[i + 1] * edgeDir.y
-			};
+			CorePt2 segStart
+				{
+				linePoint.x + tVals[i]      *edgeDir.x,
+				linePoint.y + tVals[i]      *edgeDir.y
+				};
+			CorePt2 segEnd
+				{
+				linePoint.x + tVals[i + 1] *edgeDir.x,
+				linePoint.y + tVals[i + 1] *edgeDir.y
+				};
 			result.emplace_back(segStart, segEnd);
 			}
 		}

@@ -269,6 +269,9 @@ void CmfcDlg::Gather()
 	m_json["angle"] = GetFloatValue(IDC_ANGLE_EDIT, 90.0);
 	m_json["capWidth"] = GetFloatValue(IDC_CAP_WIDTH_EDIT, 2.0);
 	m_json["capFrontExt"] = GetFloatValue(IDC_CAP_EXT_EDIT, 0.5);
+	m_json["laneWidth"] = 10.0;
+	m_json["oneWayLane"] = false;
+	m_json["animateArrows"] = false;
 	m_json["showBays"] = BST_CHECKED == IsDlgButtonChecked(IDC_SHOWBAYSCHK);
 	m_json["showCaps"] = BST_CHECKED == IsDlgButtonChecked(IDC_SHOWCAPSCHK);
 	m_json["showArrows"] = BST_CHECKED == IsDlgButtonChecked(IDC_SHOWARROWSCHK);

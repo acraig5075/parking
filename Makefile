@@ -11,6 +11,7 @@ LDFLAGS_WEB = --bind \
 # Source files
 PARKING_SRC = parking/pch.cpp \
 	parking/Core.cpp \
+	parking/ParallelLines.cpp \
 	parking/ParkingLayout.cpp \
 	parking/ParkingImage.cpp \
 	parking/WKTParser.cpp \

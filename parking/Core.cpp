@@ -256,3 +256,21 @@ bool IsCounterClockwise(const std::vector<CorePt2> &ring)
 
 	return signedArea > 0.0;
 }
+
+size_t LongestEdge(const std::vector<CorePt2> &ring)
+{
+	double longest = 0.0;
+	size_t j = 0;
+
+	for (size_t i = 1; i < ring.size(); ++i)
+		{
+		double d = ring[i - 1].DistanceTo(ring[i]);
+		if (d > longest)
+			{
+			longest = d;
+			j = i - 1;
+			}
+		}
+
+	return j;
+}

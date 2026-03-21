@@ -2,6 +2,7 @@
 #include "ParkingLayout.h"
 #include "Struct.h"
 #include "WKTParser.h"
+#include "ParallelLines.h"
 
 /// ParkingParams class
 
@@ -48,18 +49,33 @@ void CParkingLayout::Make(const std::string &wktGeometry, const ParkingParams &p
 			std::reverse(polyPath.begin(), polyPath.end());
 
 		Make(polyPath, params);
+
+		size_t longEdge = LongestEdge(polyPath);
+		double offset =
+			(params.rows == ParkingParams::DOUBLE_ROW ? params.length * 2. : params.length) +
+			(params.oneWayLane ? params.laneWidth : params.laneWidth * 2);
+		double clipping = params.length + params.laneWidth;
+
+		auto aisleLines = CalculateParallelLineTerminals(polyPath, longEdge, offset, clipping);
+		for (const auto &line : aisleLines)
+			{
+			Make({ line.start, line.end }, params);
+			}
 		}
 
-	// Linestrings
-	for (const auto &ls : parser.m_linestrings)
+	if (parser.m_polygons.empty())
 		{
-		std::vector<CorePt2> linePath;
-		for (const auto &pt : ls.WKTPoints)
+		// Linestrings
+		for (const auto &ls : parser.m_linestrings)
 			{
-			linePath.emplace_back(pt.x, pt.y);
-			}
+			std::vector<CorePt2> linePath;
+			for (const auto &pt : ls.WKTPoints)
+				{
+				linePath.emplace_back(pt.x, pt.y);
+				}
 
-		Make(linePath, params);
+			Make(linePath, params);
+			}
 		}
 }
 

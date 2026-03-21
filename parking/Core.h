@@ -66,3 +66,4 @@ public:
 };
 
 bool IsCounterClockwise(const std::vector<CorePt2> &ring);
+size_t LongestEdge(const std::vector<CorePt2> &ring);
